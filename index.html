@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Children's Community Builder - Educational Town Planning</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, #87CEEB 0%, #FFF8DC 50%, #98FB98 100%);
+            overflow: hidden;
+            font-family: 'Comic Sans MS', cursive, Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+            max-width: 100vw;
+            max-height: 100vh;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            canvas {
+                height: calc(100vh - 300px); /* Leave space for UI elements */
+            }
+        }
+        .toolbar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+            max-width: 200px;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                position: relative;
+                top: auto;
+                left: auto;
+                max-width: 100%;
+                margin: 10px;
+                max-height: 200px;
+            }
+        }
+        .tool-section {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .tool-section:last-child {
+            border-bottom: none;
+        }
+        .tool-section h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tool-button {
+            display: block;
+            width: 160px;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .tool-button.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-color: #4CAF50;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+        .tool-button:hover {
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .tool-button.active:hover {
+            background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+        }
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 14px;
+        }
+        .stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 10px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <div class="tool-section">
+            <h4>Nature</h4>
+            <div class="tool-button active" id="treeTool">🌳 Add Tree</div>
+            <div class="tool-button" id="grassTool">🌱 Paint Grass</div>
+            <div class="tool-button" id="riverTool">🌊 Draw River</div>
+            <div class="tool-button" id="rockTool">🪨 Add Rocks</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Safe Paths</h4>
+            <div class="tool-button" id="pathTool">🚶‍♀️ Draw Walking Path</div>
+            <div class="tool-button" id="bikePathTool">🚴‍♀️ Draw Bike Path</div>
+            <div class="tool-button" id="crosswalkTool">🚷 Add Crosswalk</div>
+            <div class="tool-button" id="trafficLightTool">🚦 Add Traffic Light</div>
+            <div class="tool-button" id="bridgeTool">🌉 Add Bridge</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Learning Places</h4>
+            <div class="tool-button" id="schoolTool">🏫 Add School</div>
+            <div class="tool-button" id="kindergartenTool">🧸 Add Kindergarten</div>
+            <div class="tool-button" id="libraryTool">📚 Add Library</div>
+            <div class="tool-button" id="playgroundTool">🎪 Add Playground</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Community</h4>
+            <div class="tool-button" id="churchTool">⛪ Add Church</div>
+            <div class="tool-button" id="hospitalTool">🏥 Add Hospital</div>
+            <div class="tool-button" id="policeTool">🚔 Add Police Station</div>
+            <div class="tool-button" id="parkTool">🌳 Add Park</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Friends & Helpers</h4>
+            <div class="tool-button" id="studentTool">👨‍🎓 Add Student</div>
+            <div class="tool-button" id="childTool">👶 Add Child</div>
+            <div class="tool-button" id="teacherTool">👩‍🏫 Add Teacher</div>
+            <div class="tool-button" id="parentTool">👨‍👩‍👧 Add Parent</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Safe Transport</h4>
+            <div class="tool-button" id="busTool">🚌 Add School Bus</div>
+            <div class="tool-button" id="bikeTool">🚲 Add Bike</div>
+            <div class="tool-button" id="safetyZoneTool">⚠️ Add Safety Zone</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Tools</h4>
+            <div class="tool-button" id="selectTool">✋ Select</div>
+            <div class="tool-button" id="labelTool">🏷️ Add Label</div>
+            <div class="tool-button" id="eraseTool">🗑️ Erase</div>
+            <div class="tool-button" id="clearSelectedTool">🗑️ Clear Selected</div>
+            <div class="tool-button" id="clearTool">🧹 Clear All</div>
+        </div>
+
+        <div class="tool-section">
+            <h4>Simulation</h4>
+            <div class="tool-button" id="playTool">▶️ Start Simulation</div>
+            <div class="tool-button" id="pauseTool">⏸️ Pause Simulation</div>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div>🌳 Trees: <span id="treeCount">0</span> | 🌱 Grass: <span id="grassCount">0</span></div>
+        <div>🏠 Buildings: <span id="buildingCount">0</span> | 👥 Friends: <span id="peopleCount">0</span></div>
+        <div>🚌 Vehicles: <span id="vehicleCount">0</span> | 🚲 Bikes: <span id="bikeCount">0</span></div>
+        <div>🎮 Simulation: <span id="simStatus">Ready to Play!</span></div>
+    </div>
+
+    <div class="instructions">
+        <strong>🌟 Children's Town Builder 🌟</strong><br>
+        <strong>Learning Goals:</strong><br>
+        • 🏠 Build safe communities for kids<br>
+        • 🚸 Learn about road safety<br>
+        • 👥 Help friends get to school safely<br>
+        • 🏞️ Create fun places to play and learn<br>
+        <br>
+        <strong>How to Play:</strong><br>
+        • Click tools to add buildings and friends<br>
+        • <strong>Drag elements</strong> to rearrange your town!<br>
+        • <strong>Select tool</strong> to choose multiple items<br>
+        • <strong>Right-click</strong> to stop drawing rivers<br>
+        • Draw safe paths for walking and biking<br>
+        • Add traffic lights and crosswalks<br>
+        • Start simulation to watch the magic!<br>
+        • <strong>Touch and drag</strong> on mobile devices
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Stats elements
+        const treeCountSpan = document.getElementById('treeCount');
+        const grassCountSpan = document.getElementById('grassCount');
+        const buildingCountSpan = document.getElementById('buildingCount');
+        const peopleCountSpan = document.getElementById('peopleCount');
+        const vehicleCountSpan = document.getElementById('vehicleCount');
+        const bikeCountSpan = document.getElementById('bikeCount');
+        const riverCountSpan = document.getElementById('riverCount');
+        const simStatusSpan = document.getElementById('simStatus');
+
+        // Tool buttons
+        const tools = {
+            tree: document.getElementById('treeTool'),
+            grass: document.getElementById('grassTool'),
+            river: document.getElementById('riverTool'),
+            rock: document.getElementById('rockTool'),
+            path: document.getElementById('pathTool'),
+            bikePath: document.getElementById('bikePathTool'),
+            crosswalk: document.getElementById('crosswalkTool'),
+            trafficLight: document.getElementById('trafficLightTool'),
+            bridge: document.getElementById('bridgeTool'),
+            school: document.getElementById('schoolTool'),
+            kindergarten: document.getElementById('kindergartenTool'),
+            library: document.getElementById('libraryTool'),
+            playground: document.getElementById('playgroundTool'),
+            church: document.getElementById('churchTool'),
+            hospital: document.getElementById('hospitalTool'),
+            police: document.getElementById('policeTool'),
+            park: document.getElementById('parkTool'),
+            student: document.getElementById('studentTool'),
+            child: document.getElementById('childTool'),
+            teacher: document.getElementById('teacherTool'),
+            parent: document.getElementById('parentTool'),
+            bus: document.getElementById('busTool'),
+            bike: document.getElementById('bikeTool'),
+            safetyZone: document.getElementById('safetyZoneTool'),
+            select: document.getElementById('selectTool'),
+            label: document.getElementById('labelTool'),
+            erase: document.getElementById('eraseTool'),
+            clearSelected: document.getElementById('clearSelectedTool'),
+            clear: document.getElementById('clearTool'),
+            play: document.getElementById('playTool'),
+            pause: document.getElementById('pauseTool')
+        };
+
+        function resizeCanvas() {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight - 300; // Leave space for UI
+            } else {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Data structures
+        const elements = {
+            trees: [],
+            grassPatches: [],
+            paths: [],
+            rivers: [],
+            rocks: [],
+            buildings: [],
+            bridges: [],
+            crosswalks: [],
+            trafficLights: [],
+            safetyZones: [],
+            people: [],
+            vehicles: [],
+            bikes: [],
+            labels: []
+        };
+
+        let currentPath = null;
+        let currentRiver = null;
+        let isDrawing = false;
+        let simulationRunning = false;
+        let animationId = null;
+        let selectedElements = [];
+        let isSelecting = false;
+        let selectionStartX = 0;
+        let selectionStartY = 0;
+        let selectionEndX = 0;
+        let selectionEndY = 0;
+
+        // Current tool
+        let currentTool = 'tree';
+
+        // Tool switching
+        Object.keys(tools).forEach(tool => {
+            if (tool !== 'clear') {
+                tools[tool].addEventListener('click', () => setActiveTool(tool));
+            }
+        });
+
+        tools.clearSelected.addEventListener('click', () => {
+            // Remove selected elements
+            selectedElements.forEach(element => {
+                Object.keys(elements).forEach(key => {
+                    const index = elements[key].indexOf(element);
+                    if (index > -1) {
+                        elements[key].splice(index, 1);
+                    }
+                });
+            });
+            selectedElements = [];
+            updateStats();
+            draw();
+        });
+
+        tools.clear.addEventListener('click', () => {
+            Object.keys(elements).forEach(key => elements[key].length = 0);
+            selectedElements = [];
+            simulationRunning = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            updateStats();
+            draw();
+        });
+
+        tools.play.addEventListener('click', () => {
+            simulationRunning = true;
+            simStatusSpan.textContent = 'Running';
+            animate();
+        });
+
+        tools.pause.addEventListener('click', () => {
+            simulationRunning = false;
+            simStatusSpan.textContent = 'Paused';
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        });
+
+        function setActiveTool(tool) {
+            if (tool === 'play' || tool === 'pause' || tool === 'clear') return;
+            currentTool = tool;
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            tools[tool].classList.add('active');
+        }
+
+        // Base class for draggable elements
+        class DraggableElement {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.isDragging = false;
+                this.dragOffsetX = 0;
+                this.dragOffsetY = 0;
+                this.originalX = x;
+                this.originalY = y;
+            }
+
+            startDrag(mouseX, mouseY) {
+                this.isDragging = true;
+                this.dragOffsetX = mouseX - this.x;
+                this.dragOffsetY = mouseY - this.y;
+                this.originalX = this.x;
+                this.originalY = this.y;
+            }
+
+            drag(mouseX, mouseY) {
+                if (this.isDragging) {
+                    this.x = mouseX - this.dragOffsetX;
+                    this.y = mouseY - this.dragOffsetY;
+                }
+            }
+
+            stopDrag() {
+                this.isDragging = false;
+            }
+
+            // Override in subclasses
+            contains(x, y) {
+                return false;
+            }
+
+            // Override in subclasses
+            draw() {}
+        }
+
+        // Tree class
+        class Tree extends DraggableElement {
+            constructor(x, y) {
+                super(x, y);
+                this.trunkHeight = 20 + Math.random() * 15;
+                this.trunkWidth = 6 + Math.random() * 4;
+                this.canopyRadius = 15 + Math.random() * 10;
+                this.color = `hsl(${90 + Math.random() * 60}, 70%, ${25 + Math.random() * 25}%)`;
+            }
+
+            draw() {
+                // Visual feedback when dragging
+                if (this.isDragging) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.7;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 10;
+                    ctx.scale(1.1, 1.1);
+                }
+
+                // Trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(this.x - this.trunkWidth/2, this.y - this.trunkHeight, this.trunkWidth, this.trunkHeight);
+
+                // Canopy
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y - this.trunkHeight, this.canopyRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add some texture to canopy
+                ctx.fillStyle = `hsl(${100 + Math.random() * 40}, 50%, ${25 + Math.random() * 15}%)`;
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5;
+                    const distance = this.canopyRadius * 0.7;
+                    const x = this.x + Math.cos(angle) * distance;
+                    const y = this.y - this.trunkHeight + Math.sin(angle) * distance;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3 + Math.random() * 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                if (this.isDragging) {
+                    ctx.restore();
+                }
+            }
+
+            contains(x, y) {
+                // Check trunk
+                if (x >= this.x - this.trunkWidth/2 && x <= this.x + this.trunkWidth/2 &&
+                    y >= this.y - this.trunkHeight && y <= this.y) {
+                    return true;
+                }
+                // Check canopy
+                const dx = x - this.x;
+                const dy = y - (this.y - this.trunkHeight);
+                return Math.sqrt(dx * dx + dy * dy) <= this.canopyRadius;
+            }
+        }
+
+        // Building class
+        class Building {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.width = 40 + Math.random() * 20;
+                this.height = 30 + Math.random() * 15;
+
+                // Building-specific properties
+                switch(type) {
+                    case 'school':
+                        this.color = '#FF6B6B';
+                        this.icon = '🏫';
+                        this.name = 'School';
+                        break;
+                    case 'kindergarten':
+                        this.color = '#FFD93D';
+                        this.icon = '🧸';
+                        this.name = 'Kindergarten';
+                        break;
+                    case 'library':
+                        this.color = '#6BCF7F';
+                        this.icon = '📚';
+                        this.name = 'Library';
+                        break;
+                    case 'playground':
+                        this.color = '#FF8A65';
+                        this.icon = '🎪';
+                        this.name = 'Playground';
+                        break;
+                    case 'church':
+                        this.color = '#4ECDC4';
+                        this.icon = '⛪';
+                        this.name = 'Church';
+                        break;
+                    case 'hospital':
+                        this.color = '#45B7D1';
+                        this.icon = '🏥';
+                        this.name = 'Hospital';
+                        break;
+                    case 'police':
+                        this.color = '#96CEB4';
+                        this.icon = '🚔';
+                        this.name = 'Police Station';
+                        break;
+                    case 'park':
+                        this.color = '#81C784';
+                        this.icon = '🌳';
+                        this.name = 'Park';
+                        break;
+                }
+            }
+
+            draw() {
+                // Visual feedback when dragging
+                if (this.isDragging) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.8;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 15;
+                    ctx.scale(1.05, 1.05);
+                }
+
+                // Building base
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.width/2, this.y - this.height, this.width, this.height);
+
+                // Roof
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.width/2 - 5, this.y - this.height);
+                ctx.lineTo(this.x, this.y - this.height - 10);
+                ctx.lineTo(this.x + this.width/2 + 5, this.y - this.height);
+                ctx.closePath();
+                ctx.fill();
+
+                // Windows
+                ctx.fillStyle = '#87CEEB';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(this.x - this.width/2 + 8 + i * 12, this.y - this.height + 8, 8, 8);
+                }
+
+                // Door
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(this.x - 6, this.y - 15, 12, 15);
+
+                // Icon
+                ctx.font = '16px Arial';
+                ctx.fillText(this.icon, this.x - 8, this.y - this.height - 15);
+
+                if (this.isDragging) {
+                    ctx.restore();
+                }
+            }
+
+            contains(x, y) {
+                return x >= this.x - this.width/2 && x <= this.x + this.width/2 &&
+                       y >= this.y - this.height && y <= this.y;
+            }
+        }
+
+        // Person class
+        class Person {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.targetX = x;
+                this.targetY = y;
+                this.speed = 1;
+                this.waitingForBus = false;
+
+                switch(type) {
+                    case 'student':
+                        this.icon = '👨‍🎓';
+                        this.color = '#FFD93D';
+                        break;
+                    case 'child':
+                        this.icon = '👶';
+                        this.color = '#FF8A65';
+                        break;
+                    case 'teacher':
+                        this.icon = '👩‍🏫';
+                        this.color = '#9575CD';
+                        break;
+                    case 'parent':
+                        this.icon = '👨‍👩‍👧';
+                        this.color = '#6BCF7F';
+                        break;
+                }
+            }
+
+            update() {
+                if (simulationRunning) {
+                    // Move towards target
+                    const dx = this.targetX - this.x;
+                    const dy = this.targetY - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 5) {
+                        this.x += (dx / distance) * this.speed;
+                        this.y += (dy / distance) * this.speed;
+                    }
+
+                    // If student and near school, wait for bus
+                    if (this.type === 'student') {
+                        const school = elements.buildings.find(b => b.type === 'school');
+                        if (school && Math.abs(this.x - school.x) < 50 && Math.abs(this.y - school.y) < 50) {
+                            this.waitingForBus = true;
+                            this.targetX = school.x + (Math.random() - 0.5) * 40;
+                            this.targetY = school.y + (Math.random() - 0.5) * 40;
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y + 12, 8, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Person icon
+                ctx.font = '20px Arial';
+                ctx.fillText(this.icon, this.x - 10, this.y);
+
+                // Waiting indicator
+                if (this.waitingForBus) {
+                    ctx.fillStyle = '#FFD93D';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y - 15, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            contains(x, y) {
+                return Math.abs(x - this.x) < 15 && Math.abs(y - this.y) < 20;
+            }
+        }
+
+        // Vehicle class (School Bus)
+        class Vehicle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = 0;
+                this.speed = 0;
+                this.maxSpeed = 2;
+                this.icon = '🚌';
+                this.passengers = [];
+                this.maxPassengers = 10;
+                this.route = null;
+                this.routeIndex = 0;
+                this.pickingUp = false;
+            }
+
+            update() {
+                if (!simulationRunning) return;
+
+                // Find nearest students waiting for bus
+                if (!this.pickingUp) {
+                    const waitingStudents = elements.people.filter(p =>
+                        p.type === 'student' && p.waitingForBus &&
+                        Math.abs(p.x - this.x) < 100 && Math.abs(p.y - this.y) < 100
+                    );
+
+                    if (waitingStudents.length > 0) {
+                        this.pickingUp = true;
+                        // Move towards first waiting student
+                        const student = waitingStudents[0];
+                        this.targetX = student.x;
+                        this.targetY = student.y;
+                    }
+                }
+
+                // Move towards target
+                if (this.targetX !== undefined) {
+                    const dx = this.targetX - this.x;
+                    const dy = this.targetY - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance > 5) {
+                        this.angle = Math.atan2(dy, dx);
+                        this.speed = Math.min(this.maxSpeed, distance * 0.1);
+                        this.x += Math.cos(this.angle) * this.speed;
+                        this.y += Math.sin(this.angle) * this.speed;
+                    } else {
+                        // Arrived at destination
+                        if (this.pickingUp) {
+                            // Pick up student
+                            const student = elements.people.find(p =>
+                                p.type === 'student' && p.waitingForBus &&
+                                Math.abs(p.x - this.x) < 20 && Math.abs(p.y - this.y) < 20
+                            );
+                            if (student && this.passengers.length < this.maxPassengers) {
+                                this.passengers.push(student);
+                                elements.people.splice(elements.people.indexOf(student), 1);
+                                this.pickingUp = false;
+                                // Head to school
+                                const school = elements.buildings.find(b => b.type === 'school');
+                                if (school) {
+                                    this.targetX = school.x;
+                                    this.targetY = school.y;
+                                }
+                            }
+                        } else {
+                            // Drop off passengers
+                            this.passengers.forEach(passenger => {
+                                passenger.x = this.x + (Math.random() - 0.5) * 40;
+                                passenger.y = this.y + (Math.random() - 0.5) * 40;
+                                passenger.waitingForBus = false;
+                                elements.people.push(passenger);
+                            });
+                            this.passengers = [];
+                            this.targetX = undefined;
+                            this.targetY = undefined;
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // Bus shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(-25, -8, 50, 16);
+
+                // Bus body
+                ctx.fillStyle = '#FFD93D';
+                ctx.fillRect(-20, -10, 40, 20);
+
+                // Windows
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(-15, -8, 8, 6);
+                ctx.fillRect(-5, -8, 8, 6);
+                ctx.fillRect(5, -8, 8, 6);
+
+                // Wheels
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(-12, 8, 4, 0, Math.PI * 2);
+                ctx.arc(12, 8, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+
+                // Passenger count
+                if (this.passengers.length > 0) {
+                    ctx.fillStyle = '#333';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(this.passengers.length, this.x - 5, this.y - 15);
+                }
+            }
+
+            contains(x, y) {
+                return Math.abs(x - this.x) < 25 && Math.abs(y - this.y) < 15;
+            }
+        }
+
+        // Grass patch class
+        class GrassPatch {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.blades = [];
+                this.generateBlades();
+            }
+
+            generateBlades() {
+                const numBlades = 8 + Math.random() * 12;
+                for (let i = 0; i < numBlades; i++) {
+                    this.blades.push({
+                        angle: (Math.PI * 2 * i) / numBlades + (Math.random() - 0.5) * 0.5,
+                        length: 5 + Math.random() * 8,
+                        color: `hsl(${80 + Math.random() * 40}, ${60 + Math.random() * 20}%, ${20 + Math.random() * 30}%)`
+                    });
+                }
+            }
+
+            draw() {
+                this.blades.forEach(blade => {
+                    ctx.strokeStyle = blade.color;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    const endX = this.x + Math.cos(blade.angle) * blade.length;
+                    const endY = this.y + Math.sin(blade.angle) * blade.length;
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                });
+            }
+        }
+
+        // River class
+        class River {
+            constructor(startX, startY) {
+                this.points = [{x: startX, y: startY}];
+                this.width = 20 + Math.random() * 10;
+                this.flowSpeed = 0.5 + Math.random() * 0.5;
+            }
+
+            addPoint(x, y) {
+                const lastPoint = this.points[this.points.length - 1];
+                const distance = Math.sqrt((x - lastPoint.x) ** 2 + (y - lastPoint.y) ** 2);
+                if (distance > 10) {
+                    this.points.push({x, y});
+                }
+            }
+
+            draw() {
+                if (this.points.length < 2) return;
+
+                // River bed
+                ctx.strokeStyle = '#4682B4';
+                ctx.lineWidth = this.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+
+                ctx.stroke();
+
+                // Water flow animation (like fractal tree)
+                const time = Date.now() * 0.001 * this.flowSpeed;
+                ctx.strokeStyle = 'rgba(135, 206, 235, 0.7)';
+                ctx.lineWidth = this.width * 0.6;
+
+                // Draw flowing waves along the entire river
+                for (let i = 0; i < this.points.length - 1; i++) {
+                    const p1 = this.points[i];
+                    const p2 = this.points[i + 1];
+                    const segmentLength = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+
+                    // Draw multiple flowing segments per river segment
+                    for (let t = 0; t < segmentLength; t += 3) {
+                        const ratio = t / segmentLength;
+                        const x = p1.x + (p2.x - p1.x) * ratio;
+                        const y = p1.y + (p2.y - p1.y) * ratio;
+
+                        // Create flowing wave effect
+                        const waveOffset = Math.sin(time * 2 + t * 0.05) * 1.5;
+                        const waveLength = Math.sin(time * 3 + t * 0.08) * 0.8;
+
+                        ctx.beginPath();
+                        ctx.moveTo(x + waveLength, y + waveOffset);
+                        ctx.lineTo(x + waveLength + 4, y + waveOffset);
+                        ctx.stroke();
+                    }
+                }
+
+                // Add some sparkle effects
+                if (Math.random() < 0.1) {
+                    const sparklePoint = this.points[Math.floor(Math.random() * this.points.length)];
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(sparklePoint.x + (Math.random() - 0.5) * this.width,
+                           sparklePoint.y + (Math.random() - 0.5) * 4, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Rock class
+        class Rock extends DraggableElement {
+            constructor(x, y) {
+                super(x, y);
+                this.size = 15 + Math.random() * 20;
+                this.color = `hsl(${20 + Math.random() * 30}, ${30 + Math.random() * 20}%, ${40 + Math.random() * 30}%)`;
+                this.shape = [];
+                this.generateShape();
+            }
+
+            generateShape() {
+                const numPoints = 6 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < numPoints; i++) {
+                    const angle = (Math.PI * 2 * i) / numPoints;
+                    const radius = this.size * (0.7 + Math.random() * 0.6);
+                    this.shape.push({
+                        x: Math.cos(angle) * radius,
+                        y: Math.sin(angle) * radius
+                    });
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.shape[0].x, this.y + this.shape[0].y);
+                for (let i = 1; i < this.shape.length; i++) {
+                    ctx.lineTo(this.x + this.shape[i].x, this.y + this.shape[i].y);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                // Add texture/highlights
+                ctx.strokeStyle = `hsl(${20 + Math.random() * 30}, ${20 + Math.random() * 10}%, ${50 + Math.random() * 20}%)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(this.x - this.size * 0.3, this.y - this.size * 0.3, this.size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            contains(x, y) {
+                // Simple bounding circle check
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) <= this.size;
+            }
+        }
+
+        // Bridge class with recursive arrangement
+        class Bridge extends DraggableElement {
+            constructor(x, y) {
+                super(x, y);
+                this.width = 60;
+                this.height = 8;
+                this.pillars = [];
+                this.generatePillars();
+            }
+
+            generatePillars() {
+                // Recursive pillar generation like fractal tree
+                this.pillars = [];
+                this.addPillarRecursive(this.x, this.y + this.height, 25 + Math.random() * 15, 0);
+            }
+
+            addPillarRecursive(x, y, height, depth) {
+                if (depth > 3) return; // Limit recursion depth
+
+                this.pillars.push({ x, y, height });
+
+                // Add child pillars with decreasing height (like tree branches)
+                const childHeight = height * 0.7;
+                if (childHeight > 10) {
+                    // Left child
+                    this.addPillarRecursive(x - 15, y, childHeight, depth + 1);
+                    // Right child
+                    this.addPillarRecursive(x + 15, y, childHeight, depth + 1);
+                }
+            }
+
+            draw() {
+                // Bridge deck
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(this.x - this.width/2, this.y - this.height, this.width, this.height);
+
+                // Bridge railings
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(this.x - this.width/2, this.y - this.height);
+                ctx.lineTo(this.x + this.width/2, this.y - this.height);
+                ctx.moveTo(this.x - this.width/2, this.y);
+                ctx.lineTo(this.x + this.width/2, this.y);
+                ctx.stroke();
+
+                // Pillars
+                ctx.fillStyle = '#654321';
+                this.pillars.forEach(pillar => {
+                    ctx.fillRect(pillar.x - 3, this.y, 6, pillar.height);
+                });
+            }
+
+            contains(x, y) {
+                return x >= this.x - this.width/2 && x <= this.x + this.width/2 &&
+                       y >= this.y - this.height && y <= this.y + 30;
+            }
+        }
+
+        // Label class
+        class Label {
+            constructor(x, y, text = '') {
+                this.x = x;
+                this.y = y;
+                this.text = text || 'Label';
+                this.dragging = false;
+                this.offsetX = 0;
+                this.offsetY = 0;
+            }
+
+            draw() {
+                // Label background
+                const textWidth = ctx.measureText(this.text).width;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(this.x - textWidth/2 - 5, this.y - 20, textWidth + 10, 25);
+
+                // Label border
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(this.x - textWidth/2 - 5, this.y - 20, textWidth + 10, 25);
+
+                // Label text
+                ctx.fillStyle = '#333';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y - 5);
+                ctx.textAlign = 'left';
+            }
+
+            contains(x, y) {
+                const textWidth = ctx.measureText(this.text).width;
+                return x >= this.x - textWidth/2 - 5 && x <= this.x + textWidth/2 + 5 &&
+                       y >= this.y - 20 && y <= this.y + 5;
+            }
+
+            startDrag(x, y) {
+                this.dragging = true;
+                this.offsetX = x - this.x;
+                this.offsetY = y - this.y;
+            }
+
+            drag(x, y) {
+                if (this.dragging) {
+                    this.x = x - this.offsetX;
+                    this.y = y - this.offsetY;
+                }
+            }
+
+            stopDrag() {
+                this.dragging = false;
+            }
+        }
+
+        // Crosswalk class
+        class Crosswalk {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 60;
+                this.height = 12;
+                this.stripeWidth = 4;
+            }
+
+            draw() {
+                // Crosswalk background
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+
+                // White stripes
+                ctx.fillStyle = '#FFF';
+                for (let i = 0; i < 5; i++) {
+                    const stripeX = this.x - this.width/2 + i * (this.width / 4);
+                    ctx.fillRect(stripeX, this.y - this.height/2, this.stripeWidth, this.height);
+                }
+
+                // Warning symbol
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '16px Arial';
+                ctx.fillText('🚷', this.x - 8, this.y - this.height/2 - 10);
+            }
+
+            contains(x, y) {
+                return x >= this.x - this.width/2 && x <= this.x + this.width/2 &&
+                       y >= this.y - this.height/2 && y <= this.y + this.height/2;
+            }
+        }
+
+        // Traffic Light class
+        class TrafficLight {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 8;
+                this.height = 24;
+                this.state = 'red'; // red, yellow, green
+                this.timer = 0;
+            }
+
+            update() {
+                if (simulationRunning) {
+                    this.timer++;
+                    if (this.timer < 120) this.state = 'red';
+                    else if (this.timer < 140) this.state = 'yellow';
+                    else if (this.timer < 260) this.state = 'green';
+                    else if (this.timer < 280) this.state = 'yellow';
+                    else this.timer = 0;
+                }
+            }
+
+            draw() {
+                // Pole
+                ctx.fillStyle = '#666';
+                ctx.fillRect(this.x - 2, this.y - this.height, 4, this.height);
+
+                // Light box
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - this.width/2, this.y - this.height - 8, this.width, 8);
+
+                // Lights
+                const lightColors = { red: '#FF0000', yellow: '#FFFF00', green: '#00FF00' };
+                const lightY = this.y - this.height - 6;
+
+                // Red light
+                ctx.fillStyle = this.state === 'red' ? lightColors.red : '#333';
+                ctx.beginPath();
+                ctx.arc(this.x, lightY, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Yellow light
+                ctx.fillStyle = this.state === 'yellow' ? lightColors.yellow : '#333';
+                ctx.beginPath();
+                ctx.arc(this.x, lightY + 3, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Green light
+                ctx.fillStyle = this.state === 'green' ? lightColors.green : '#333';
+                ctx.beginPath();
+                ctx.arc(this.x, lightY + 6, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            contains(x, y) {
+                return x >= this.x - this.width/2 && x <= this.x + this.width/2 &&
+                       y >= this.y - this.height - 8 && y <= this.y;
+            }
+        }
+
+        // Safety Zone class
+        class SafetyZone {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 30;
+            }
+
+            draw() {
+                // Safety zone circle
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Warning symbol
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '20px Arial';
+                ctx.fillText('⚠️', this.x - 10, this.y + 5);
+
+                // Label
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('SAFE ZONE', this.x, this.y + this.radius + 15);
+                ctx.textAlign = 'left';
+            }
+
+            contains(x, y) {
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return Math.sqrt(dx * dx + dy * dy) <= this.radius;
+            }
+        }
+
+        // Bike class
+        class Bike {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = 0;
+                this.speed = 0;
+                this.maxSpeed = 3;
+                this.icon = '🚲';
+                this.rider = null;
+            }
+
+            update() {
+                if (!simulationRunning) return;
+
+                // Simple bike movement - could be enhanced with path following
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+
+                // Wrap around screen
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // Bike shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.fillRect(-15, -5, 30, 10);
+
+                // Bike
+                ctx.font = '24px Arial';
+                ctx.fillText(this.icon, -12, 8);
+
+                ctx.restore();
+            }
+
+            contains(x, y) {
+                return Math.abs(x - this.x) < 15 && Math.abs(y - this.y) < 15;
+            }
+        }
+
+        // Path class
+        class Path {
+            constructor(startX, startY) {
+                this.points = [{x: startX, y: startY}];
+                this.width = 8;
+                this.color = '#8B4513';
+            }
+
+            addPoint(x, y) {
+                // Only add if far enough from last point
+                const lastPoint = this.points[this.points.length - 1];
+                const distance = Math.sqrt((x - lastPoint.x) ** 2 + (y - lastPoint.y) ** 2);
+                if (distance > 5) {
+                    this.points.push({x, y});
+                }
+            }
+
+            draw() {
+                if (this.points.length < 2) return;
+
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+
+                ctx.stroke();
+
+                // Add some texture
+                ctx.strokeStyle = `hsl(25, 30%, ${40 + Math.random() * 20}%)`;
+                ctx.lineWidth = this.width * 0.6;
+                ctx.stroke();
+            }
+        }
+
+        // Mouse events
+        let draggedLabel = null;
+        let draggedElement = null;
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            isDrawing = true;
+
+            // Handle selection tool
+            if (currentTool === 'select') {
+                isSelecting = true;
+                selectionStartX = x;
+                selectionStartY = y;
+                selectionEndX = x;
+                selectionEndY = y;
+                return;
+            }
+
+            // Check for label dragging first
+            draggedLabel = elements.labels.find(label => label.contains(x, y));
+            if (draggedLabel) {
+                draggedLabel.startDrag(x, y);
+                return;
+            }
+
+            // Check for element dragging (if not in erase mode)
+            if (currentTool !== 'erase') {
+                draggedElement = findDraggableElement(x, y);
+                if (draggedElement) {
+                    draggedElement.startDrag(x, y);
+                    return;
+                }
+            }
+
+            switch (currentTool) {
+                case 'tree':
+                    elements.trees.push(new Tree(x, y));
+                    break;
+                case 'grass':
+                    elements.grassPatches.push(new GrassPatch(x, y));
+                    break;
+                case 'river':
+                    currentRiver = new River(x, y);
+                    elements.rivers.push(currentRiver);
+                    break;
+                case 'rock':
+                    elements.rocks.push(new Rock(x, y));
+                    break;
+                case 'path':
+                    currentPath = new Path(x, y);
+                    elements.paths.push(currentPath);
+                    break;
+                case 'bridge':
+                    elements.bridges.push(new Bridge(x, y));
+                    break;
+                case 'school':
+                case 'kindergarten':
+                case 'library':
+                case 'playground':
+                case 'church':
+                case 'hospital':
+                case 'police':
+                case 'park':
+                    elements.buildings.push(new Building(x, y, currentTool));
+                    break;
+                case 'crosswalk':
+                    elements.crosswalks.push(new Crosswalk(x, y));
+                    break;
+                case 'trafficLight':
+                    elements.trafficLights.push(new TrafficLight(x, y));
+                    break;
+                case 'safetyZone':
+                    elements.safetyZones.push(new SafetyZone(x, y));
+                    break;
+                case 'student':
+                case 'child':
+                case 'teacher':
+                case 'parent':
+                    elements.people.push(new Person(x, y, currentTool));
+                    break;
+                case 'bus':
+                    elements.vehicles.push(new Vehicle(x, y));
+                    break;
+                case 'bike':
+                    elements.bikes.push(new Bike(x, y));
+                    break;
+                case 'label':
+                    const text = prompt('Enter label text:', 'New Label');
+                    if (text) {
+                        // Check for overlapping labels
+                        let canPlace = true;
+                        const newLabelWidth = ctx.measureText(text).width + 20;
+                        const newLabelHeight = 35;
+
+                        for (const existingLabel of elements.labels) {
+                            const existingWidth = ctx.measureText(existingLabel.text).width + 20;
+                            const dx = Math.abs(x - existingLabel.x);
+                            const dy = Math.abs(y - existingLabel.y);
+                            const minDistanceX = (newLabelWidth + existingWidth) / 2;
+                            const minDistanceY = newLabelHeight * 1.5;
+
+                            if (dx < minDistanceX && dy < minDistanceY) {
+                                canPlace = false;
+                                alert('Labels too close! Try placing elsewhere.');
+                                break;
+                            }
+                        }
+
+                        if (canPlace) {
+                            elements.labels.push(new Label(x, y, text));
+                        }
+                    }
+                    break;
+                case 'erase':
+                    // Remove elements in reverse order of drawing
+                    const removeFromArray = (array, condition) => {
+                        for (let i = array.length - 1; i >= 0; i--) {
+                            if (condition(array[i])) {
+                                array.splice(i, 1);
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    // Try to remove in order of layering
+                    if (removeFromArray(elements.labels, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.vehicles, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.bikes, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.people, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.buildings, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.trafficLights, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.crosswalks, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.safetyZones, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.bridges, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.rocks, item => item.contains(x, y))) return;
+                    if (removeFromArray(elements.rivers, river => {
+                        // Check if click is near river path
+                        for (let point of river.points) {
+                            if (Math.abs(point.x - x) < river.width/2 && Math.abs(point.y - y) < river.width/2) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })) return;
+                    if (removeFromArray(elements.paths, path => {
+                        for (let point of path.points) {
+                            if (Math.abs(point.x - x) < path.width/2 && Math.abs(point.y - y) < path.width/2) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })) return;
+                    if (removeFromArray(elements.trees, tree => tree.contains(x, y))) return;
+                    if (removeFromArray(elements.grassPatches, patch => {
+                        const dist = Math.sqrt((x - patch.x) ** 2 + (y - patch.y) ** 2);
+                        return dist < 30;
+                    })) return;
+                    break;
+            }
+
+            updateStats();
+            draw();
+        });
+
+        // Function to find draggable element at position
+        function findDraggableElement(x, y) {
+            // Check in reverse order (top to bottom in rendering)
+            const draggableArrays = [
+                elements.labels,
+                elements.vehicles,
+                elements.bikes,
+                elements.people,
+                elements.buildings,
+                elements.trafficLights,
+                elements.crosswalks,
+                elements.safetyZones,
+                elements.bridges,
+                elements.rocks,
+                elements.trees
+            ];
+
+            for (const array of draggableArrays) {
+                for (let i = array.length - 1; i >= 0; i--) {
+                    if (array[i].contains && array[i].contains(x, y)) {
+                        return array[i];
+                    }
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Handle selection rectangle
+            if (isSelecting) {
+                selectionEndX = x;
+                selectionEndY = y;
+                draw();
+                return;
+            }
+
+            // Handle label dragging
+            if (draggedLabel) {
+                draggedLabel.drag(x, y);
+                draw();
+                return;
+            }
+
+            // Handle element dragging
+            if (draggedElement) {
+                draggedElement.drag(x, y);
+                draw();
+                return;
+            }
+
+            if (!isDrawing) return;
+
+            switch (currentTool) {
+                case 'grass':
+                    // Add grass patch if not too close to existing ones
+                    let tooClose = false;
+                    elements.grassPatches.forEach(patch => {
+                        const dist = Math.sqrt((x - patch.x) ** 2 + (y - patch.y) ** 2);
+                        if (dist < 15) tooClose = true;
+                    });
+                    if (!tooClose) {
+                        elements.grassPatches.push(new GrassPatch(x, y));
+                    }
+                    break;
+                case 'river':
+                    if (currentRiver) {
+                        currentRiver.addPoint(x, y);
+                    }
+                    break;
+                case 'path':
+                    if (currentPath) {
+                        currentPath.addPoint(x, y);
+                    }
+                    break;
+            }
+
+            updateStats();
+            draw();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            // Handle selection completion
+            if (isSelecting) {
+                isSelecting = false;
+                // Find elements within selection rectangle
+                selectedElements = [];
+                const minX = Math.min(selectionStartX, selectionEndX);
+                const maxX = Math.max(selectionStartX, selectionEndX);
+                const minY = Math.min(selectionStartY, selectionEndY);
+                const maxY = Math.max(selectionStartY, selectionEndY);
+
+                // Check all draggable elements
+                Object.keys(elements).forEach(key => {
+                    if (key !== 'labels') { // Labels are handled separately
+                        elements[key].forEach(element => {
+                            if (element.contains) {
+                                // For simplicity, check if element center is in selection
+                                if (element.x >= minX && element.x <= maxX &&
+                                    element.y >= minY && element.y <= maxY) {
+                                    selectedElements.push(element);
+                                }
+                            }
+                        });
+                    }
+                });
+                draw();
+                return;
+            }
+
+            isDrawing = false;
+            currentPath = null;
+            currentRiver = null;
+            if (draggedLabel) {
+                draggedLabel.stopDrag();
+                draggedLabel = null;
+            }
+            if (draggedElement) {
+                draggedElement.stopDrag();
+                draggedElement = null;
+            }
+        });
+
+        // Right-click to stop river drawing
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (currentRiver) {
+                currentRiver = null;
+                isDrawing = false;
+            }
+        });
+
+        // Touch support for mobile devices
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Simulate mouse down
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            // Simulate mouse move
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            // Simulate mouse up
+            const mouseEvent = new MouseEvent('mouseup');
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        function updateStats() {
+            if (treeCountSpan) treeCountSpan.textContent = elements.trees.length;
+            if (grassCountSpan) grassCountSpan.textContent = elements.grassPatches.length;
+            if (buildingCountSpan) buildingCountSpan.textContent = elements.buildings.length;
+            if (peopleCountSpan) peopleCountSpan.textContent = elements.people.length;
+            if (vehicleCountSpan) vehicleCountSpan.textContent = elements.vehicles.length;
+            if (bikeCountSpan) bikeCountSpan.textContent = elements.bikes.length;
+            if (riverCountSpan) riverCountSpan.textContent = elements.rivers.length;
+        }
+
+        function draw() {
+            // Clear with colorful sky gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(0.4, '#FFF8DC');
+            gradient.addColorStop(0.7, '#98FB98');
+            gradient.addColorStop(1, '#32CD32');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Add some fluffy clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 5; i++) {
+                const x = (i * 200 + Date.now() * 0.01) % (canvas.width + 100) - 50;
+                const y = 50 + i * 30;
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.arc(x + 15, y, 25, 0, Math.PI * 2);
+                ctx.arc(x + 30, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw rivers (bottom layer)
+            elements.rivers.forEach(river => river.draw());
+
+            // Draw bridges (over rivers)
+            elements.bridges.forEach(bridge => bridge.draw());
+
+            // Draw paths
+            elements.paths.forEach(path => path.draw());
+
+            // Draw rocks
+            elements.rocks.forEach(rock => rock.draw());
+
+            // Draw grass patches
+            elements.grassPatches.forEach(patch => patch.draw());
+
+            // Draw buildings
+            elements.buildings.forEach(building => building.draw());
+
+            // Draw safety features
+            elements.crosswalks.forEach(crosswalk => crosswalk.draw());
+            elements.trafficLights.forEach(light => light.draw());
+            elements.safetyZones.forEach(zone => zone.draw());
+
+            // Draw trees
+            elements.trees.forEach(tree => tree.draw());
+
+            // Draw people
+            elements.people.forEach(person => person.draw());
+
+            // Draw vehicles
+            elements.vehicles.forEach(vehicle => vehicle.draw());
+            elements.bikes.forEach(bike => bike.draw());
+
+            // Draw selection rectangle
+            if (isSelecting) {
+                const width = selectionEndX - selectionStartX;
+                const height = selectionEndY - selectionStartY;
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(selectionStartX, selectionStartY, width, height);
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+                ctx.fillRect(selectionStartX, selectionStartY, width, height);
+            }
+
+            // Draw selected elements highlight
+            selectedElements.forEach(element => {
+                if (element.x !== undefined && element.y !== undefined) {
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    if (element.width && element.height) {
+                        // For buildings
+                        ctx.strokeRect(element.x - element.width/2 - 2, element.y - element.height - 2,
+                                     element.width + 4, element.height + 4);
+                    } else {
+                        // For other elements
+                        ctx.arc(element.x, element.y, 15, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            // Draw labels (top layer)
+            elements.labels.forEach(label => label.draw());
+        }
+
+        function animate() {
+            if (simulationRunning) {
+                // Update traffic lights
+                elements.trafficLights.forEach(light => light.update());
+
+                // Update people
+                elements.people.forEach(person => person.update());
+
+                // Update vehicles
+                elements.vehicles.forEach(vehicle => vehicle.update());
+
+                // Update bikes
+                elements.bikes.forEach(bike => bike.update());
+
+                draw();
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Add some initial elements to make it more engaging
+        function addInitialElements() {
+            const isMobile = canvas.width <= 768;
+            const scale = isMobile ? 0.7 : 1;
+
+            // Add some trees
+            elements.trees.push(new Tree(100 * scale, canvas.height - 100));
+            elements.trees.push(new Tree(300 * scale, canvas.height - 120));
+            if (!isMobile) elements.trees.push(new Tree(500, canvas.height - 90));
+
+            // Add a school and kindergarten
+            elements.buildings.push(new Building(200 * scale, canvas.height - 80, 'school'));
+            elements.buildings.push(new Building(400 * scale, canvas.height - 70, 'kindergarten'));
+
+            // Add some grass
+            elements.grassPatches.push(new GrassPatch(150 * scale, canvas.height - 50));
+            elements.grassPatches.push(new GrassPatch(350 * scale, canvas.height - 40));
+
+            // Add a path
+            const path = new Path(50 * scale, canvas.height - 30);
+            path.addPoint(150 * scale, canvas.height - 30);
+            path.addPoint(250 * scale, canvas.height - 30);
+            elements.paths.push(path);
+
+            // Add some people
+            elements.people.push(new Person(180 * scale, canvas.height - 60, 'student'));
+            elements.people.push(new Person(420 * scale, canvas.height - 50, 'child'));
+
+            // Add safety features
+            elements.crosswalks.push(new Crosswalk(150 * scale, canvas.height - 30));
+            elements.trafficLights.push(new TrafficLight(100 * scale, canvas.height - 100));
+
+            updateStats();
+        }
+
+        addInitialElements();
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
